@@ -1,0 +1,81 @@
+# ------------------------------
+# 🐍 Python
+# ------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# ------------------------------
+# 📦 Packaging
+# ------------------------------
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# ------------------------------
+# 📊 Data files (important for your MMM project)
+# ------------------------------
+data/raw/
+data/processed/
+*.csv
+*.parquet
+*.feather
+
+# Keep folder structure but ignore files
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# ------------------------------
+# 🧪 Testing
+# ------------------------------
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ------------------------------
+# 📓 Jupyter Notebooks
+# ------------------------------
+.ipynb_checkpoints/
+
+# ------------------------------
+# 🛠️ IDE / Editor
+# ------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ------------------------------
+# 🔐 Environment variables
+# ------------------------------
+.env
+.env.*
+
+# ------------------------------
+# 🧾 Logs
+# ------------------------------
+*.log
+
+# ------------------------------
+# 🧠 ML / Model files
+# ------------------------------
+*.pkl
+*.joblib
+*.h5
+*.pt
+
+
+# ------------------------------
+# 🔥 Misc
+# ------------------------------
+*.bak
+*.tmp
