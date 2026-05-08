@@ -8,7 +8,6 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 import joblib
 import pandas as pd
 import numpy as np
-import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -18,65 +17,83 @@ from src.features import build_features
 MODEL_PATH = Path("models/mmm_model.joblib")
 DATA_PATH  = Path("data/raw/weekly_media_data.csv")
 
-st.set_page_config(page_title="Overview · MarketLytics", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Overview · MarketLytics", page_icon="📈", layout="wide",
+                   initial_sidebar_state="collapsed")
 
-# ── Shared styles (identical across all pages) ────────────────────────────────
+# ── Design system (identical across all pages) ────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
-html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
-#MainMenu, footer, header { visibility: hidden; }
-.block-container { padding: 2rem 3rem; max-width: 1100px; }
-[data-testid="stSidebar"] { background: #FAFAF9; border-right: 1px solid #E8E6E1; }
-.sidebar-brand { display:flex;align-items:center;gap:10px;margin-bottom:2rem; }
-.sidebar-brand-icon { width:32px;height:32px;background:#1a1a1a;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:600; }
-.sidebar-brand-text { font-size:15px;font-weight:600;color:#1a1a1a;letter-spacing:-0.3px; }
-.sidebar-sub { font-size:11px;color:#9B9B9B;margin-top:1px; }
-.nav-label { font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;
-  color:#9B9B9B;margin:1.5rem 0 0.5rem 0; }
-.page-header { border-bottom:1px solid #E8E6E1;padding-bottom:1.5rem;margin-bottom:2rem; }
-.page-eyebrow { font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;
-  color:#9B9B9B;margin-bottom:6px; }
-.page-title { font-size:28px;font-weight:600;color:#1a1a1a;letter-spacing:-0.5px;margin:0; }
-.page-desc { font-size:14px;color:#6B6B6B;margin-top:6px;line-height:1.5; }
-.section-title { font-size:13px;font-weight:600;color:#1a1a1a;letter-spacing:-0.2px;margin:0 0 0.35rem 0; }
-.section-desc { font-size:12px;color:#9B9B9B;margin-bottom:1rem; }
-.panel { background:#fff;border:1px solid #E8E6E1;border-radius:10px;padding:1.5rem; }
-[data-testid="stMetric"] { background:#FAFAF9;border:1px solid #E8E6E1;border-radius:10px;padding:1rem 1.25rem; }
-[data-testid="stMetricLabel"] { font-size:11px !important;color:#9B9B9B !important;font-weight:500 !important;text-transform:uppercase;letter-spacing:0.04em; }
-[data-testid="stMetricValue"] { font-size:22px !important;font-weight:600 !important;color:#1a1a1a !important;letter-spacing:-0.4px !important; }
-.stButton > button { background:#1a1a1a !important;color:#fff !important;border:none !important;
-  border-radius:8px !important;font-family:'DM Sans',sans-serif !important;font-size:13px !important;
-  font-weight:500 !important;padding:0.5rem 1.25rem !important; }
-hr { border:none;border-top:1px solid #E8E6E1;margin:2rem 0; }
-[data-testid="stDataFrame"] { border:1px solid #E8E6E1;border-radius:10px;overflow:hidden; }
-.stTabs [data-baseweb="tab-list"] { gap:0;border-bottom:1px solid #E8E6E1;background:transparent; }
-.stTabs [data-baseweb="tab"] { font-size:13px;font-weight:500;color:#6B6B6B;
-  padding:0.5rem 1rem;border-bottom:2px solid transparent;background:transparent; }
-.stTabs [aria-selected="true"] { color:#1a1a1a !important;border-bottom:2px solid #1a1a1a !important; }
-.stCaption { font-size:11px !important;color:#9B9B9B !important; }
-[data-testid="stSidebarNav"] a { font-size:13px !important;color:#3D3D3D !important;
-  font-weight:400 !important;padding:0.4rem 0.75rem !important;border-radius:6px !important; }
-[data-testid="stSidebarNav"] [aria-current="page"] { background:#ECEAE4 !important;
-  font-weight:500 !important;color:#1a1a1a !important; }
-.insight-pill { display:inline-block;background:#F5F4F0;border-radius:6px;
-  padding:0.3rem 0.75rem;font-size:12px;color:#3D3D3D;margin:0.25rem 0.25rem 0.25rem 0; }
-.insight-pill.green { background:#F0FDF4;color:#16A34A; }
-.insight-pill.amber { background:#FFFBEB;color:#D97706; }
-.insight-pill.red { background:#FEF2F2;color:#DC2626; }
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --bg:#F7F6F2; --surface:#FFFFFF; --border:#E2E0D9; --border-strong:#C8C5BC;
+  --ink:#141414; --ink-mid:#4A4A4A; --ink-muted:#8C8C8C;
+  --green:#15803D; --green-bg:#F0FDF4; --green-border:#BBF7D0;
+  --red:#DC2626; --red-bg:#FEF2F2; --amber:#B45309; --amber-bg:#FFFBEB;
+  --radius:10px; --font-sans:'DM Sans',sans-serif;
+  --font-display:'Syne',sans-serif; --font-mono:'DM Mono',monospace;
+}
+html,body,[class*="css"]{font-family:var(--font-sans);background:var(--bg)!important;color:var(--ink);}
+#MainMenu,footer,header{visibility:hidden;}
+[data-testid="collapsedControl"]{display:none!important;}
+[data-testid="stSidebar"]{display:none!important;}
+.block-container{padding:0!important;max-width:100%!important;}
+section[data-testid="stMain"]>div{padding:0!important;}
+.topnav{position:sticky;top:0;z-index:1000;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 3rem;height:56px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.topnav-brand{display:flex;align-items:center;gap:10px;}
+.topnav-logo{width:30px;height:30px;background:var(--ink);border-radius:7px;display:flex;align-items:center;justify-content:center;color:white;font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:-0.3px;}
+.topnav-name{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-0.3px;}
+.topnav-links{display:flex;align-items:center;gap:4px;}
+.topnav-link{font-size:13px;font-weight:500;color:var(--ink-mid);padding:6px 14px;border-radius:6px;text-decoration:none;transition:all 0.15s;display:inline-block;}
+.topnav-link:hover{background:var(--bg);color:var(--ink);}
+.topnav-link.active{background:var(--ink);color:white!important;}
+.page-wrap{max-width:1100px;margin:0 auto;padding:2.5rem 3rem 5rem;}
+.page-header{border-bottom:1px solid var(--border);padding-bottom:1.5rem;margin-bottom:2rem;}
+.page-eyebrow{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;}
+.page-title{font-family:var(--font-display);font-size:36px;font-weight:800;color:var(--ink);letter-spacing:-0.8px;margin:0 0 8px 0;}
+.page-desc{font-size:14px;color:var(--ink-mid);margin-top:4px;line-height:1.6;max-width:600px;}
+.section-title{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-0.2px;margin:0 0 0.3rem 0;}
+.section-desc{font-size:12px;color:var(--ink-muted);margin-bottom:1rem;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;}
+[data-testid="stMetric"]{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;}
+[data-testid="stMetricLabel"]{font-size:10px!important;color:var(--ink-muted)!important;font-weight:600!important;text-transform:uppercase;letter-spacing:0.05em!important;}
+[data-testid="stMetricValue"]{font-family:var(--font-display)!important;font-size:22px!important;font-weight:700!important;color:var(--ink)!important;letter-spacing:-0.4px!important;}
+[data-testid="stMetricDelta"]{font-size:12px!important;}
+.stButton>button{background:var(--ink)!important;color:white!important;border:none!important;border-radius:8px!important;font-family:var(--font-sans)!important;font-size:13px!important;font-weight:500!important;padding:0.5rem 1.25rem!important;}
+.stButton>button:hover{opacity:0.8!important;}
+hr{border:none;border-top:1px solid var(--border);margin:2rem 0;}
+[data-testid="stDataFrame"]{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.stTabs [data-baseweb="tab-list"]{gap:0;border-bottom:1px solid var(--border);background:transparent;}
+.stTabs [data-baseweb="tab"]{font-size:13px;font-weight:500;color:var(--ink-mid);padding:0.5rem 1rem;border-bottom:2px solid transparent;background:transparent;}
+.stTabs [aria-selected="true"]{color:var(--ink)!important;border-bottom:2px solid var(--ink)!important;}
+.stCaption{font-size:11px!important;color:var(--ink-muted)!important;}
+.insight-pill{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--ink-mid);margin:0.25rem 0.25rem 0.25rem 0;font-weight:500;}
+.insight-pill.green{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
+.insight-pill.amber{background:var(--amber-bg);border-color:#FDE68A;color:var(--amber);}
+.next-footer{border-top:1px solid var(--border);margin-top:3rem;padding-top:1.5rem;display:flex;align-items:center;justify-content:space-between;}
+.prev-link,.next-link{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;text-decoration:none;transition:opacity 0.15s;}
+.prev-link{background:var(--bg);border:1px solid var(--border);color:var(--ink)!important;}
+.next-link{background:var(--ink);color:white!important;}
+.prev-link:hover,.next-link:hover{opacity:0.8;}
 </style>
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown("""
-<div class="sidebar-brand">
-  <div class="sidebar-brand-icon">ML</div>
-  <div><div class="sidebar-brand-text">MarketLytics</div><div class="sidebar-sub">MMM Platform</div></div>
+# ── Top nav ───────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="topnav">
+  <div class="topnav-brand">
+    <div class="topnav-logo">ML</div>
+    <div class="topnav-name">MarketLytics</div>
+  </div>
+  <div class="topnav-links">
+    <a class="topnav-link" href="/">Home</a>
+    <a class="topnav-link active" href="/1_overview">Overview</a>
+    <a class="topnav-link" href="/2_playground">Playground</a>
+    <a class="topnav-link" href="/3_diagnostics">Diagnostics</a>
+  </div>
 </div>
-<div class="nav-label">Analytics</div>
 """, unsafe_allow_html=True)
 
-# ── Data loading ──────────────────────────────────────────────────────────────
+# ── Data ──────────────────────────────────────────────────────────────────────
 @st.cache_data
 def load_data():
     return pd.read_csv(DATA_PATH, parse_dates=["DATE"])
@@ -98,10 +115,15 @@ CHANNELS = ["tv_S", "ooh_S", "print_S", "facebook_S", "search_S", "newsletter"]
 CH_LABELS = {"tv_S": "TV", "ooh_S": "Out-of-Home", "print_S": "Print",
              "facebook_S": "Facebook", "search_S": "Search", "newsletter": "Newsletter"}
 
-# ── Page header ───────────────────────────────────────────────────────────────
+# ── Chart colours ─────────────────────────────────────────────────────────────
+PALETTE = ["#141414", "#3D3D3D", "#6B6B6B", "#9B9B9B", "#C4C2BC", "#E8E6E1"]
+
+# ── Page body ─────────────────────────────────────────────────────────────────
+st.markdown('<div class="page-wrap">', unsafe_allow_html=True)
+
 st.markdown("""
 <div class="page-header">
-  <div class="page-eyebrow">Channel Performance</div>
+  <div class="page-eyebrow">Step 01 · Backward-looking</div>
   <div class="page-title">Channel Overview</div>
   <div class="page-desc">Revenue attribution and ROI across all media channels — based on 208 weeks of spend data.</div>
 </div>
@@ -115,7 +137,7 @@ with st.expander("Filter date range", expanded=False):
     contribs = channel_contributions(artifacts, df)
     roi_df   = channel_roi(df, contribs)
 
-# ── KPIs ──────────────────────────────────────────────────────────────────────
+# ── KPI row ───────────────────────────────────────────────────────────────────
 total_rev   = df["revenue"].sum()
 total_spend = roi_df["total_spend"].sum()
 avg_roi     = total_rev / total_spend if total_spend > 0 else 0
@@ -141,23 +163,22 @@ with col1:
     roi_plot["label"] = roi_plot["channel"].map(CH_LABELS).fillna(roi_plot["channel"])
     roi_plot = roi_plot.sort_values("roi", ascending=True)
 
+    colors = [PALETTE[0] if i == len(roi_plot) - 1 else "#E2E0D9" for i in range(len(roi_plot))]
     fig_roi = go.Figure()
-    colors  = ["#E8E6E1"] * len(roi_plot)
-    colors[-1] = "#1a1a1a"   # highlight top channel
     fig_roi.add_trace(go.Bar(
         x=roi_plot["roi"], y=roi_plot["label"], orientation="h",
         marker_color=colors,
         text=[f"{v:.2f}×" for v in roi_plot["roi"]],
         textposition="outside",
-        textfont=dict(size=12, color="#1a1a1a", family="DM Sans"),
+        textfont=dict(size=12, color="#141414", family="DM Sans"),
         hovertemplate="<b>%{y}</b><br>ROI: %{x:.2f}×<extra></extra>",
     ))
     fig_roi.update_layout(
         height=280, margin=dict(l=0, r=60, t=10, b=10),
         plot_bgcolor="white", paper_bgcolor="white",
         xaxis=dict(showgrid=True, gridcolor="#F0EEE9", zeroline=False,
-                   tickfont=dict(size=11, color="#9B9B9B"), showticklabels=False),
-        yaxis=dict(showgrid=False, tickfont=dict(size=12, color="#3D3D3D")),
+                   tickfont=dict(size=11, color="#8C8C8C"), showticklabels=False),
+        yaxis=dict(showgrid=False, tickfont=dict(size=12, color="#4A4A4A")),
         bargap=0.35,
     )
     st.plotly_chart(fig_roi, use_container_width=True, config={"displayModeBar": False})
@@ -168,23 +189,25 @@ with col2:
 
     contribs_plot = contribs.copy()
     contribs_plot["label"] = contribs_plot["channel"].map(CH_LABELS).fillna(contribs_plot["channel"])
+    top_ch = contribs_plot.loc[contribs_plot["contribution_pct"].idxmax(), "label"]
 
     fig_pie = go.Figure(go.Pie(
         labels=contribs_plot["label"],
         values=contribs_plot["contribution_pct"],
         hole=0.6,
-        marker=dict(colors=["#1a1a1a","#3D3D3D","#6B6B6B","#9B9B9B","#C4C2BC","#E8E6E1"],
-                    line=dict(color="white", width=2)),
+        marker=dict(colors=PALETTE, line=dict(color="white", width=2)),
         textinfo="none",
         hovertemplate="<b>%{label}</b><br>%{value:.1f}%<extra></extra>",
     ))
     fig_pie.update_layout(
         height=280, margin=dict(l=0, r=0, t=10, b=10),
         paper_bgcolor="white",
-        legend=dict(orientation="v", font=dict(size=11, color="#3D3D3D"),
-                    itemsizing="constant", x=0.75, y=0.5),
-        annotations=[dict(text=f"<b>{contribs_plot.loc[contribs_plot['contribution_pct'].idxmax(),'label']}</b><br>leads",
-                         x=0.38, y=0.5, font_size=11, showarrow=False, font_color="#6B6B6B")]
+        legend=dict(orientation="v", font=dict(size=11, color="#4A4A4A"),
+                    itemsizing="constant", x=0.72, y=0.5),
+        annotations=[dict(
+            text=f"<b>{top_ch}</b><br><span style='color:#8C8C8C'>leads</span>",
+            x=0.35, y=0.5, font_size=11, showarrow=False, font_color="#141414"
+        )]
     )
     st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
 
@@ -194,28 +217,27 @@ st.markdown('<div class="section-title">Revenue & Spend Over Time</div>', unsafe
 st.markdown('<div class="section-desc">Weekly revenue trend alongside total media investment</div>', unsafe_allow_html=True)
 
 df["total_spend_week"] = df[CHANNELS].apply(pd.to_numeric, errors="coerce").sum(axis=1)
-
 tab1, tab2 = st.tabs(["Revenue vs Spend", "Channel Spend Breakdown"])
 
 with tab1:
     fig_ts = go.Figure()
     fig_ts.add_trace(go.Scatter(
         x=df["DATE"], y=df["revenue"], name="Revenue",
-        line=dict(color="#1a1a1a", width=2),
+        line=dict(color="#141414", width=2),
         hovertemplate="<b>Revenue</b><br>%{x|%b %d, %Y}<br>$%{y:,.0f}<extra></extra>",
     ))
     fig_ts.add_trace(go.Bar(
         x=df["DATE"], y=df["total_spend_week"], name="Media Spend",
-        marker_color="#E8E6E1", yaxis="y2",
+        marker_color="#E2E0D9", yaxis="y2",
         hovertemplate="<b>Spend</b><br>%{x|%b %d, %Y}<br>$%{y:,.0f}<extra></extra>",
     ))
     fig_ts.update_layout(
         height=320, margin=dict(l=0, r=0, t=10, b=0),
         plot_bgcolor="white", paper_bgcolor="white",
         yaxis=dict(title="Revenue ($)", gridcolor="#F0EEE9", tickformat="$,.0f",
-                   tickfont=dict(size=11, color="#9B9B9B")),
+                   tickfont=dict(size=11, color="#8C8C8C")),
         yaxis2=dict(title="Spend ($)", overlaying="y", side="right",
-                    tickfont=dict(size=11, color="#9B9B9B"), tickformat="$,.0f"),
+                    tickfont=dict(size=11, color="#8C8C8C"), tickformat="$,.0f"),
         legend=dict(orientation="h", y=1.08, font=dict(size=12)),
         hovermode="x unified",
     )
@@ -227,18 +249,17 @@ with tab2:
     melted["spend"]   = pd.to_numeric(melted["spend"], errors="coerce").fillna(0)
 
     fig_area = go.Figure()
-    ch_colors = ["#1a1a1a","#3D3D3D","#6B6B6B","#9B9B9B","#C4C2BC","#E8E6E1"]
     for i, (ch_raw, ch_label) in enumerate(CH_LABELS.items()):
         ch_data = melted[melted["channel"] == ch_label]
         fig_area.add_trace(go.Bar(
             x=ch_data["DATE"], y=ch_data["spend"],
-            name=ch_label, marker_color=ch_colors[i % len(ch_colors)],
+            name=ch_label, marker_color=PALETTE[i % len(PALETTE)],
         ))
     fig_area.update_layout(
         barmode="stack", height=320, margin=dict(l=0, r=0, t=10, b=0),
         plot_bgcolor="white", paper_bgcolor="white",
         yaxis=dict(gridcolor="#F0EEE9", tickformat="$,.0f",
-                   tickfont=dict(size=11, color="#9B9B9B")),
+                   tickfont=dict(size=11, color="#8C8C8C")),
         legend=dict(orientation="h", y=1.08, font=dict(size=12)),
         hovermode="x unified",
     )
@@ -276,3 +297,13 @@ st.markdown(f"""
 <span class="insight-pill amber">△ {low_label} has the lowest ROI at {low_roi['roi']:.2f}× — consider reallocation</span>
 <span class="insight-pill">◈ Blended ROI of {avg_roi:.2f}× across ${total_spend/1e6:.1f}M total spend</span>
 """, unsafe_allow_html=True)
+
+# ── Page nav ──────────────────────────────────────────────────────────────────
+_pn_l, _pn_r = st.columns([1,1])
+with _pn_l:
+    st.page_link("main.py", label="← Home")
+with _pn_r:
+    st.page_link("pages/2_playground.py", label="Budget Playground →")
+ 
+st.markdown('</div>', unsafe_allow_html=True)
+ 

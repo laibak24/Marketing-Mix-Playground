@@ -18,61 +18,128 @@ from src.adstock import CHANNELS
 MODEL_PATH = Path("models/mmm_model.joblib")
 DATA_PATH  = Path("data/raw/weekly_media_data.csv")
 
-st.set_page_config(page_title="Budget Playground · MarketLytics", page_icon="🎛️", layout="wide")
+st.set_page_config(page_title="Playground · MarketLytics", page_icon="🎛️", layout="wide",
+                   initial_sidebar_state="collapsed")
 
-SHARED_CSS = """
+# ── Design system ─────────────────────────────────────────────────────────────
+st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap');
-html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
-#MainMenu, footer, header { visibility: hidden; }
-.block-container { padding: 2rem 3rem; max-width: 1100px; }
-[data-testid="stSidebar"] { background: #FAFAF9; border-right: 1px solid #E8E6E1; }
-.sidebar-brand { display:flex;align-items:center;gap:10px;margin-bottom:2rem; }
-.sidebar-brand-icon { width:32px;height:32px;background:#1a1a1a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:600; }
-.sidebar-brand-text { font-size:15px;font-weight:600;color:#1a1a1a;letter-spacing:-0.3px; }
-.sidebar-sub { font-size:11px;color:#9B9B9B;margin-top:1px; }
-.nav-label { font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#9B9B9B;margin:1.5rem 0 0.5rem 0; }
-.page-header { border-bottom:1px solid #E8E6E1;padding-bottom:1.5rem;margin-bottom:2rem; }
-.page-eyebrow { font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#9B9B9B;margin-bottom:6px; }
-.page-title { font-size:28px;font-weight:600;color:#1a1a1a;letter-spacing:-0.5px;margin:0; }
-.page-desc { font-size:14px;color:#6B6B6B;margin-top:6px;line-height:1.5; }
-.section-title { font-size:13px;font-weight:600;color:#1a1a1a;letter-spacing:-0.2px;margin:0 0 0.35rem 0; }
-.section-desc { font-size:12px;color:#9B9B9B;margin-bottom:1rem; }
-.panel { background:#fff;border:1px solid #E8E6E1;border-radius:10px;padding:1.5rem; }
-[data-testid="stMetric"] { background:#FAFAF9;border:1px solid #E8E6E1;border-radius:10px;padding:1rem 1.25rem; }
-[data-testid="stMetricLabel"] { font-size:11px !important;color:#9B9B9B !important;font-weight:500 !important;text-transform:uppercase;letter-spacing:0.04em; }
-[data-testid="stMetricValue"] { font-size:22px !important;font-weight:600 !important;color:#1a1a1a !important;letter-spacing:-0.4px !important; }
-[data-testid="stMetricDelta"] { font-size:12px !important; }
-.stButton > button { background:#1a1a1a !important;color:#fff !important;border:none !important;border-radius:8px !important;font-family:'DM Sans',sans-serif !important;font-size:13px !important;font-weight:500 !important;padding:0.5rem 1.25rem !important; }
-.stButton > button:hover { opacity:0.8 !important; }
-[data-testid="stSlider"] > div > div > div > div { background:#1a1a1a !important; }
-hr { border:none;border-top:1px solid #E8E6E1;margin:2rem 0; }
-.stCaption { font-size:11px !important;color:#9B9B9B !important; }
-[data-testid="stSidebarNav"] a { font-size:13px !important;color:#3D3D3D !important;font-weight:400 !important;padding:0.4rem 0.75rem !important;border-radius:6px !important; }
-[data-testid="stSidebarNav"] [aria-current="page"] { background:#ECEAE4 !important;font-weight:500 !important;color:#1a1a1a !important; }
-.channel-card { background:#FAFAF9;border:1px solid #E8E6E1;border-radius:10px;padding:1.25rem;margin-bottom:0.75rem; }
-.channel-name { font-size:12px;font-weight:600;color:#1a1a1a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem; }
-.budget-bar-bg { background:#E8E6E1;border-radius:4px;height:4px;margin:0.5rem 0; }
-.budget-bar-fill { background:#1a1a1a;border-radius:4px;height:4px; }
-.result-banner { background:#F5F4F0;border:1px solid #E8E6E1;border-radius:10px;
-  padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between; }
-.result-banner-label { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#9B9B9B; }
-.result-banner-value { font-size:26px;font-weight:600;color:#1a1a1a;letter-spacing:-0.5px; }
-.result-banner-delta.pos { color:#16A34A;font-size:13px;font-weight:500; }
-.result-banner-delta.neg { color:#DC2626;font-size:13px;font-weight:500; }
-[data-testid="stNumberInput"] input { font-family:'DM Mono',monospace !important;font-size:14px !important; }
-</style>
-"""
-st.markdown(SHARED_CSS, unsafe_allow_html=True)
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --bg:#F7F6F2; --surface:#FFFFFF; --border:#E2E0D9; --border-strong:#C8C5BC;
+  --ink:#141414; --ink-mid:#4A4A4A; --ink-muted:#8C8C8C;
+  --green:#15803D; --green-bg:#F0FDF4; --green-border:#BBF7D0;
+  --red:#DC2626; --red-bg:#FEF2F2; --amber:#B45309; --amber-bg:#FFFBEB;
+  --radius:10px; --font-sans:'DM Sans',sans-serif;
+  --font-display:'Syne',sans-serif; --font-mono:'DM Mono',monospace;
+}
+html,body,[class*="css"]{font-family:var(--font-sans);background:var(--bg)!important;color:var(--ink);}
+#MainMenu,footer,header{visibility:hidden;}
+[data-testid="collapsedControl"]{display:none!important;}
+[data-testid="stSidebar"]{display:none!important;}
+.block-container{padding:0!important;max-width:100%!important;}
+section[data-testid="stMain"]>div{padding:0!important;}
+.topnav{position:sticky;top:0;z-index:1000;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 3rem;height:56px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.topnav-brand{display:flex;align-items:center;gap:10px;}
+.topnav-logo{width:30px;height:30px;background:var(--ink);border-radius:7px;display:flex;align-items:center;justify-content:center;color:white;font-family:var(--font-display);font-size:12px;font-weight:700;}
+.topnav-name{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-0.3px;}
+.topnav-links{display:flex;align-items:center;gap:4px;}
+.topnav-link{font-size:13px;font-weight:500;color:var(--ink-mid);padding:6px 14px;border-radius:6px;text-decoration:none;transition:all 0.15s;display:inline-block;}
+.topnav-link:hover{background:var(--bg);color:var(--ink);}
+.topnav-link.active{background:var(--ink);color:white!important;}
+.page-wrap{max-width:1100px;margin:0 auto;padding:2.5rem 3rem 5rem;}
+.page-header{border-bottom:1px solid var(--border);padding-bottom:1.5rem;margin-bottom:2rem;}
+.page-eyebrow{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;}
+.page-title{font-family:var(--font-display);font-size:36px;font-weight:800;color:var(--ink);letter-spacing:-0.8px;margin:0 0 8px 0;}
+.page-desc{font-size:14px;color:var(--ink-mid);margin-top:4px;line-height:1.6;max-width:600px;}
+.section-title{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-0.2px;margin:0 0 0.3rem 0;}
+.section-desc{font-size:12px;color:var(--ink-muted);margin-bottom:1rem;}
+[data-testid="stMetric"]{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;}
+[data-testid="stMetricLabel"]{font-size:10px!important;color:var(--ink-muted)!important;font-weight:600!important;text-transform:uppercase;letter-spacing:0.05em!important;}
+[data-testid="stMetricValue"]{font-family:var(--font-display)!important;font-size:22px!important;font-weight:700!important;color:var(--ink)!important;letter-spacing:-0.4px!important;}
+[data-testid="stMetricDelta"]{font-size:12px!important;}
+.stButton>button{background:var(--ink)!important;color:white!important;border:none!important;border-radius:8px!important;font-family:var(--font-sans)!important;font-size:13px!important;font-weight:500!important;padding:0.5rem 1.25rem!important;}
+.stButton>button:hover{opacity:0.8!important;}
+[data-testid="stSlider"]>div>div>div>div{background:var(--ink)!important;}
+[data-testid="stNumberInput"] input{font-family:var(--font-mono)!important;font-size:14px!important;}
+hr{border:none;border-top:1px solid var(--border);margin:2rem 0;}
+.stCaption{font-size:11px!important;color:var(--ink-muted)!important;}
+.stAlert{border-radius:8px!important;font-size:13px!important;}
 
-st.sidebar.markdown("""
-<div class="sidebar-brand">
-  <div class="sidebar-brand-icon">ML</div>
-  <div><div class="sidebar-brand-text">MarketLytics</div><div class="sidebar-sub">MMM Platform</div></div>
-</div>
-<div class="nav-label">Analytics</div>
+/* ── Revenue banner — the hero output ── */
+.rev-banner {
+  background: var(--ink); color: white;
+  border-radius: var(--radius); padding: 2rem 2.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.rev-banner-main {}
+.rev-banner-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 6px;
+}
+.rev-banner-value {
+  font-family: var(--font-display); font-size: 44px; font-weight: 800;
+  letter-spacing: -1.5px; line-height: 1; margin-bottom: 8px;
+}
+.rev-banner-delta {
+  font-size: 14px; font-weight: 500;
+}
+.rev-banner-delta.pos { color: #4ADE80; }
+.rev-banner-delta.neg { color: #F87171; }
+.rev-banner-side { text-align: right; }
+.rev-banner-side-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 6px;
+}
+.rev-banner-side-value {
+  font-family: var(--font-display); font-size: 32px; font-weight: 700;
+  letter-spacing: -1px; line-height: 1;
+}
+.rev-banner-side-value.pos { color: #4ADE80; }
+.rev-banner-side-value.neg { color: #F87171; }
+
+/* ── Optimizer result banner ── */
+.opt-banner {
+  background: var(--green-bg); border: 1px solid var(--green-border);
+  border-radius: var(--radius); padding: 1.5rem 2rem; margin-bottom: 1.5rem;
+}
+.opt-banner-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--green); margin-bottom: 6px;
+}
+.opt-banner-value {
+  font-family: var(--font-display); font-size: 32px; font-weight: 800;
+  color: var(--ink); letter-spacing: -0.8px; margin-bottom: 4px;
+}
+.opt-banner-sub { font-size: 13px; color: var(--green); font-weight: 500; }
+
+/* ── Page nav ── */
+.next-footer{border-top:1px solid var(--border);margin-top:3rem;padding-top:1.5rem;display:flex;align-items:center;justify-content:space-between;}
+.prev-link,.next-link{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;text-decoration:none;transition:opacity 0.15s;}
+.prev-link{background:var(--bg);border:1px solid var(--border);color:var(--ink)!important;}
+.next-link{background:var(--ink);color:white!important;}
+.prev-link:hover,.next-link:hover{opacity:0.8;}
+</style>
 """, unsafe_allow_html=True)
 
+# ── Top nav ───────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="topnav">
+  <div class="topnav-brand">
+    <div class="topnav-logo">ML</div>
+    <div class="topnav-name">MarketLytics</div>
+  </div>
+  <div class="topnav-links">
+    <a class="topnav-link" href="/">Home</a>
+    <a class="topnav-link" href="/1_overview">Overview</a>
+    <a class="topnav-link active" href="/2_playground">Playground</a>
+    <a class="topnav-link" href="/3_diagnostics">Diagnostics</a>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Data ──────────────────────────────────────────────────────────────────────
 CH_LABELS = {
     "tv_S": "TV", "ooh_S": "Out-of-Home", "print_S": "Print",
     "facebook_S": "Facebook", "search_S": "Paid Search", "newsletter": "Newsletter"
@@ -106,10 +173,12 @@ for ch in CHANNELS:
 
 total_default = sum(channel_defaults.values())
 
-# ── Page header ───────────────────────────────────────────────────────────────
+# ── Page body ─────────────────────────────────────────────────────────────────
+st.markdown('<div class="page-wrap">', unsafe_allow_html=True)
+
 st.markdown("""
 <div class="page-header">
-  <div class="page-eyebrow">Scenario Planning</div>
+  <div class="page-eyebrow">Step 02 · Forward-looking</div>
   <div class="page-title">Budget Playground</div>
   <div class="page-desc">Adjust weekly spend across channels and instantly see the predicted impact on revenue. Use the optimiser to find the best allocation for your budget.</div>
 </div>
@@ -140,7 +209,7 @@ st.markdown("<hr>", unsafe_allow_html=True)
 
 # ── Channel allocation ────────────────────────────────────────────────────────
 st.markdown('<div class="section-title">Channel Allocation</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-desc">Drag each slider to set weekly spend per channel. The bar shows your allocation vs historical average.</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-desc">Drag each slider to set weekly spend per channel. Numbers show allocation vs historical average.</div>', unsafe_allow_html=True)
 
 allocs = {}
 cols_top = st.columns(3)
@@ -164,9 +233,9 @@ for i, ch in enumerate(CHANNELS):
         pct_of_total = allocs[ch] / total_budget * 100 if total_budget > 0 else 0
         vs_hist      = allocs[ch] - hist
         sign         = "▲" if vs_hist > 0 else ("▼" if vs_hist < 0 else "—")
-        color        = "#16A34A" if vs_hist > 0 else ("#DC2626" if vs_hist < 0 else "#9B9B9B")
+        color        = "var(--green)" if vs_hist > 0 else ("var(--red)" if vs_hist < 0 else "var(--ink-muted)")
         st.markdown(
-            f'<div style="font-size:11px;color:#9B9B9B;">'
+            f'<div style="font-size:11px;color:var(--ink-muted);">'
             f'{pct_of_total:.1f}% of budget &nbsp;·&nbsp; '
             f'<span style="color:{color}">{sign} ${abs(vs_hist):,} vs avg</span>'
             f'</div>',
@@ -180,7 +249,8 @@ remaining = total_budget - allocated
 st.markdown("<hr>", unsafe_allow_html=True)
 sb1, sb2, sb3 = st.columns(3)
 sb1.metric("Allocated", f"${allocated:,.0f}")
-sb2.metric("Remaining",  f"${remaining:,.0f}", delta=f"{remaining/total_budget*100:.1f}% unallocated" if total_budget > 0 else None)
+sb2.metric("Remaining",  f"${remaining:,.0f}",
+           delta=f"{remaining/total_budget*100:.1f}% unallocated" if total_budget > 0 else None)
 sb3.metric("Channels Active", f"{sum(1 for v in allocs.values() if v > 0)} / {len(CHANNELS)}")
 
 if remaining < 0:
@@ -188,10 +258,10 @@ if remaining < 0:
 elif remaining > total_budget * 0.05:
     st.warning(f"${remaining:,} unallocated. Distribute remaining budget for a more accurate prediction.")
 
-# ── Live prediction ───────────────────────────────────────────────────────────
+# ── Revenue prediction — HERO output ─────────────────────────────────────────
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown('<div class="section-title">Revenue Prediction</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-desc">Model output based on your current allocation — updates as you move sliders</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-desc">Model output based on your current allocation — updates live as you move sliders</div>', unsafe_allow_html=True)
 
 baseline_spend = {ch: channel_defaults[ch] for ch in CHANNELS}
 baseline_rev   = predict_revenue_from_spend(baseline_spend, artifacts, SATURATION_DEFAULTS)
@@ -200,17 +270,20 @@ delta          = current_rev - baseline_rev
 delta_pct      = delta / baseline_rev * 100 if baseline_rev > 0 else 0
 sign_cls       = "pos" if delta >= 0 else "neg"
 sign_sym       = "▲" if delta >= 0 else "▼"
+delta_sign     = "+" if delta >= 0 else ""
 
 st.markdown(f"""
-<div class="result-banner">
-  <div>
-    <div class="result-banner-label">Predicted Weekly Revenue</div>
-    <div class="result-banner-value">${current_rev:,.0f}</div>
-    <div class="result-banner-delta {sign_cls}">{sign_sym} {abs(delta_pct):.1f}% vs historical baseline (${baseline_rev:,.0f})</div>
+<div class="rev-banner">
+  <div class="rev-banner-main">
+    <div class="rev-banner-label">Predicted Weekly Revenue</div>
+    <div class="rev-banner-value">${current_rev:,.0f}</div>
+    <div class="rev-banner-delta {sign_cls}">
+      {sign_sym} {abs(delta_pct):.1f}% vs historical baseline (${baseline_rev:,.0f})
+    </div>
   </div>
-  <div style="text-align:right;">
-    <div class="result-banner-label">Revenue Delta</div>
-    <div class="result-banner-value" style="font-size:20px;color:{'#16A34A' if delta>=0 else '#DC2626'}">${delta:+,.0f}</div>
+  <div class="rev-banner-side">
+    <div class="rev-banner-side-label">Revenue Delta</div>
+    <div class="rev-banner-side-value {sign_cls}">{delta_sign}${delta:,.0f}</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -223,17 +296,17 @@ curr_vals = [allocs[ch] for ch in CHANNELS]
 
 fig = go.Figure()
 fig.add_trace(go.Bar(name="Historical Avg", x=labels, y=hist_vals,
-                     marker_color="#E8E6E1",
+                     marker_color="#E2E0D9",
                      hovertemplate="<b>%{x}</b><br>Hist: $%{y:,.0f}<extra></extra>"))
 fig.add_trace(go.Bar(name="Your Allocation", x=labels, y=curr_vals,
-                     marker_color="#1a1a1a",
+                     marker_color="#141414",
                      hovertemplate="<b>%{x}</b><br>Yours: $%{y:,.0f}<extra></extra>"))
 fig.update_layout(
     barmode="group", height=300, margin=dict(l=0, r=0, t=10, b=0),
     plot_bgcolor="white", paper_bgcolor="white",
     yaxis=dict(gridcolor="#F0EEE9", tickformat="$,.0f",
-               tickfont=dict(size=11, color="#9B9B9B")),
-    xaxis=dict(tickfont=dict(size=12, color="#3D3D3D")),
+               tickfont=dict(size=11, color="#8C8C8C")),
+    xaxis=dict(tickfont=dict(size=12, color="#4A4A4A")),
     legend=dict(orientation="h", y=1.1, font=dict(size=12)),
     bargap=0.25, bargroupgap=0.08,
 )
@@ -252,18 +325,18 @@ with right2:
 
 if run_opt:
     with st.spinner("Running optimisation..."):
-        result   = optimize_budget(total_budget, artifacts, CHANNELS, SATURATION_DEFAULTS)
-    opt_rev  = result.pop("_predicted_revenue")
-    success  = result.pop("_success")
-    uplift   = (opt_rev - baseline_rev) / baseline_rev * 100
-
+        result  = optimize_budget(total_budget, artifacts, CHANNELS, SATURATION_DEFAULTS)
+    opt_rev = result.pop("_predicted_revenue")
+    success = result.pop("_success")
+    uplift  = (opt_rev - baseline_rev) / baseline_rev * 100
     opt_delta = opt_rev - current_rev
+
     st.markdown(f"""
-    <div class="result-banner" style="margin-bottom:1.5rem;">
-      <div>
-        <div class="result-banner-label">Optimal Predicted Revenue</div>
-        <div class="result-banner-value">${opt_rev:,.0f}</div>
-        <div class="result-banner-delta pos">▲ ${opt_delta:+,.0f} vs your current allocation &nbsp;·&nbsp; {uplift:+.1f}% vs baseline</div>
+    <div class="opt-banner">
+      <div class="opt-banner-label">Optimal Predicted Revenue</div>
+      <div class="opt-banner-value">${opt_rev:,.0f}</div>
+      <div class="opt-banner-sub">
+        +${opt_delta:,.0f} vs your current allocation &nbsp;·&nbsp; {uplift:+.1f}% vs historical baseline
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -275,7 +348,16 @@ if run_opt:
         optimal_alloc = result[ch]
         diff          = optimal_alloc - current_alloc
         opt_cols[i].metric(label, f"${optimal_alloc:,.0f}", delta=f"${diff:+,.0f}")
-        st.session_state[f"sl_{ch}_opt"] = optimal_alloc
 
     if not success:
         st.caption("⚠ Optimiser converged with warnings — result is a best estimate.")
+
+# ── Page nav ──────────────────────────────────────────────────────────────────
+_pn_l, _pn_r = st.columns([1,1])
+with _pn_l:
+    st.page_link("pages/1_overview.py", label="← Channel Overview")
+with _pn_r:
+    st.page_link("pages/3_diagnostics.py", label="Model Diagnostics →")
+ 
+st.markdown('</div>', unsafe_allow_html=True)
+ 

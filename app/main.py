@@ -2,230 +2,420 @@
 main.py — MarketLytics MMM Dashboard entry point.
 Run: streamlit run app/main.py
 """
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parents[1]))
+
+import pandas as pd
+import joblib
 import streamlit as st
+
+DATA_PATH  = Path("data/raw/weekly_media_data.csv")
+MODEL_PATH = Path("models/mmm_model.joblib")
 
 st.set_page_config(
     page_title="MarketLytics · MMM",
     page_icon="◈",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-st.markdown("""
+# ── Shared design system (imported on every page) ─────────────────────────────
+SHARED_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:            #F7F6F2;
+  --surface:       #FFFFFF;
+  --border:        #E2E0D9;
+  --border-strong: #C8C5BC;
+  --ink:           #141414;
+  --ink-mid:       #4A4A4A;
+  --ink-muted:     #8C8C8C;
+  --green:         #15803D;
+  --green-bg:      #F0FDF4;
+  --green-border:  #BBF7D0;
+  --red:           #DC2626;
+  --red-bg:        #FEF2F2;
+  --amber:         #B45309;
+  --amber-bg:      #FFFBEB;
+  --radius:        10px;
+  --font-sans:     'DM Sans', sans-serif;
+  --font-display:  'Syne', sans-serif;
+  --font-mono:     'DM Mono', monospace;
+}
 
 html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
+  background: var(--bg) !important;
+  color: var(--ink);
 }
 
-/* Hide default Streamlit chrome */
+/* ── Hide Streamlit chrome ── */
 #MainMenu, footer, header { visibility: hidden; }
-.block-container { padding: 2rem 3rem 2rem 3rem; max-width: 1100px; }
+[data-testid="collapsedControl"] { display: none !important; }
+[data-testid="stSidebar"] { display: none !important; }
+.block-container { padding: 0 !important; max-width: 100% !important; }
+section[data-testid="stMain"] > div { padding: 0 !important; }
 
-/* Sidebar */
-[data-testid="stSidebar"] {
-    background: #FAFAF9;
-    border-right: 1px solid #E8E6E1;
+/* ── Sticky top nav ── */
+.topnav {
+  position: sticky; top: 0; z-index: 1000;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 3rem; height: 56px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
-[data-testid="stSidebar"] .block-container { padding: 2rem 1.5rem; }
+.topnav-brand { display: flex; align-items: center; gap: 10px; }
+.topnav-logo {
+  width: 30px; height: 30px; background: var(--ink);
+  border-radius: 7px; display: flex; align-items: center;
+  justify-content: center; color: white;
+  font-family: var(--font-display); font-size: 12px; font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.topnav-name {
+  font-family: var(--font-display); font-size: 15px; font-weight: 700;
+  color: var(--ink); letter-spacing: -0.3px;
+}
+.topnav-links { display: flex; align-items: center; gap: 4px; }
+.topnav-link {
+  font-size: 13px; font-weight: 500; color: var(--ink-mid);
+  padding: 6px 14px; border-radius: 6px;
+  text-decoration: none; transition: all 0.15s; display: inline-block;
+}
+.topnav-link:hover { background: var(--bg); color: var(--ink); }
+.topnav-link.active { background: var(--ink); color: white !important; }
 
-.sidebar-brand {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 2rem;
-}
-.sidebar-brand-icon {
-    width: 32px; height: 32px; background: #1a1a1a;
-    border-radius: 8px; display: flex; align-items: center;
-    justify-content: center; color: white; font-size: 14px; font-weight: 600;
-}
-.sidebar-brand-text { font-size: 15px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.3px; }
-.sidebar-sub { font-size: 11px; color: #9B9B9B; margin-top: 1px; }
+/* ── Page wrapper ── */
+.page-wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 3rem 5rem; }
 
-.nav-label {
-    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
-    text-transform: uppercase; color: #9B9B9B; margin: 1.5rem 0 0.5rem 0;
+/* ── Hero ── */
+.hero { padding: 3.5rem 0 3rem; border-bottom: 1px solid var(--border); margin-bottom: 2.5rem; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 5px 14px;
+  font-size: 11px; color: var(--ink-muted); font-weight: 500;
+  margin-bottom: 18px;
+}
+.hero-title {
+  font-family: var(--font-display); font-size: 50px; font-weight: 800;
+  color: var(--ink); letter-spacing: -1.5px; line-height: 1.05;
+  margin: 0 0 16px 0;
+}
+.hero-desc {
+  font-size: 15px; color: var(--ink-mid); line-height: 1.7;
+  max-width: 540px; margin-bottom: 0;
 }
 
-/* Stale link removal */
-a { text-decoration: none !important; }
-
-/* Page content */
-.page-header {
-    border-bottom: 1px solid #E8E6E1;
-    padding-bottom: 1.5rem; margin-bottom: 2rem;
+/* ── KPI strip ── */
+.kpi-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 2.5rem;
 }
-.page-eyebrow {
-    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-    text-transform: uppercase; color: #9B9B9B; margin-bottom: 6px;
+.kpi-cell { background: var(--surface); padding: 1.25rem 1.5rem; }
+.kpi-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-muted); margin-bottom: 6px;
 }
-.page-title {
-    font-size: 28px; font-weight: 600; color: #1a1a1a;
-    letter-spacing: -0.5px; margin: 0;
+.kpi-value {
+  font-family: var(--font-display); font-size: 26px; font-weight: 700;
+  color: var(--ink); letter-spacing: -0.5px; line-height: 1.1;
 }
-.page-desc { font-size: 14px; color: #6B6B6B; margin-top: 6px; line-height: 1.5; }
+.kpi-sub { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
 
-/* KPI cards */
-.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
-            background: #E8E6E1; border: 1px solid #E8E6E1; border-radius: 10px;
-            overflow: hidden; margin-bottom: 2rem; }
-.kpi-card { background: #fff; padding: 1.25rem 1.5rem; }
-.kpi-label { font-size: 11px; color: #9B9B9B; font-weight: 500;
-             letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
-.kpi-value { font-size: 24px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.5px; }
-.kpi-delta { font-size: 12px; color: #6B6B6B; margin-top: 3px; }
-.kpi-delta.pos { color: #16A34A; }
-.kpi-delta.neg { color: #DC2626; }
-
-/* Section headers */
+/* ── Section header ── */
+.section-header { margin-bottom: 1.25rem; }
 .section-title {
-    font-size: 13px; font-weight: 600; color: #1a1a1a;
-    letter-spacing: -0.2px; margin: 0 0 1rem 0;
+  font-family: var(--font-display); font-size: 20px; font-weight: 700;
+  color: var(--ink); letter-spacing: -0.4px; margin: 0 0 4px 0;
 }
-.section-desc { font-size: 12px; color: #9B9B9B; margin-top: -0.75rem; margin-bottom: 1rem; }
+.section-desc { font-size: 13px; color: var(--ink-muted); }
 
-/* Cards / panels */
-.panel {
-    background: #fff; border: 1px solid #E8E6E1;
-    border-radius: 10px; padding: 1.5rem;
+/* ── How it works ── */
+.hiw-steps {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 2.5rem;
+}
+.hiw-step { background: var(--surface); padding: 2rem; }
+.hiw-num {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-muted); margin-bottom: 0.75rem;
+}
+.hiw-icon { font-size: 22px; margin-bottom: 0.5rem; }
+.hiw-step-title {
+  font-family: var(--font-display); font-size: 17px; font-weight: 700;
+  color: var(--ink); letter-spacing: -0.3px; margin-bottom: 0.5rem;
+}
+.hiw-step-desc { font-size: 13px; color: var(--ink-mid); line-height: 1.65; }
+.hiw-arrow {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg); color: var(--ink-muted); font-size: 18px;
+  align-self: stretch; padding: 0 0.5rem;
 }
 
-/* Metric overrides */
+/* ── Feature cards ── */
+.feature-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; margin-bottom: 2.5rem;
+}
+.feature-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.5rem;
+  transition: border-color 0.15s, box-shadow 0.15s; cursor: default;
+}
+.feature-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+.feature-icon { font-size: 20px; margin-bottom: 0.6rem; }
+.feature-dir {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px;
+}
+.feature-title {
+  font-family: var(--font-display); font-size: 15px; font-weight: 700;
+  color: var(--ink); margin-bottom: 0.4rem;
+}
+.feature-desc { font-size: 13px; color: var(--ink-mid); line-height: 1.6; }
+
+/* ── Tech stack strip ── */
+.tech-strip {
+  border-top: 1px solid var(--border); padding-top: 1.5rem;
+  font-size: 12px; color: var(--ink-muted); line-height: 1.8;
+}
+
+/* ── Page footer (next link) ── */
+.next-footer {
+  border-top: 1px solid var(--border); margin-top: 3rem;
+  padding-top: 1.5rem;
+  display: flex; align-items: center; justify-content: flex-end;
+}
+.next-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--ink); color: white !important;
+  font-size: 13px; font-weight: 600;
+  padding: 9px 18px; border-radius: 8px;
+  text-decoration: none; transition: opacity 0.15s;
+}
+.next-link:hover { opacity: 0.8; }
+
+/* ── Streamlit widget overrides ── */
 [data-testid="stMetric"] {
-    background: #FAFAF9; border: 1px solid #E8E6E1;
-    border-radius: 10px; padding: 1rem 1.25rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem 1.25rem;
 }
-[data-testid="stMetricLabel"] { font-size: 11px !important; color: #9B9B9B !important;
-    font-weight: 500 !important; text-transform: uppercase; letter-spacing: 0.04em; }
-[data-testid="stMetricValue"] { font-size: 22px !important; font-weight: 600 !important;
-    color: #1a1a1a !important; letter-spacing: -0.4px !important; }
+[data-testid="stMetricLabel"] {
+  font-size: 10px !important; color: var(--ink-muted) !important;
+  font-weight: 600 !important; text-transform: uppercase;
+  letter-spacing: 0.05em !important;
+}
+[data-testid="stMetricValue"] {
+  font-family: var(--font-display) !important;
+  font-size: 22px !important; font-weight: 700 !important;
+  color: var(--ink) !important; letter-spacing: -0.4px !important;
+}
 [data-testid="stMetricDelta"] { font-size: 12px !important; }
-
-/* Buttons */
 .stButton > button {
-    background: #1a1a1a !important; color: #fff !important;
-    border: none !important; border-radius: 8px !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 13px !important; font-weight: 500 !important;
-    padding: 0.5rem 1.25rem !important; letter-spacing: -0.1px !important;
-    transition: opacity 0.15s !important;
+  background: var(--ink) !important; color: white !important;
+  border: none !important; border-radius: 8px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important; font-weight: 500 !important;
+  padding: 0.5rem 1.25rem !important; transition: opacity 0.15s !important;
 }
 .stButton > button:hover { opacity: 0.8 !important; }
-
-/* Sliders */
-[data-testid="stSlider"] > div > div > div > div {
-    background: #1a1a1a !important;
+[data-testid="stSlider"] > div > div > div > div { background: var(--ink) !important; }
+[data-testid="stNumberInput"] input {
+  font-family: var(--font-mono) !important; font-size: 14px !important;
 }
-
-/* Tabs */
+hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+.stCaption { font-size: 11px !important; color: var(--ink-muted) !important; }
+[data-testid="stDataFrame"] {
+  border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+}
 .stTabs [data-baseweb="tab-list"] {
-    gap: 0; border-bottom: 1px solid #E8E6E1; background: transparent;
+  gap: 0; border-bottom: 1px solid var(--border); background: transparent;
 }
 .stTabs [data-baseweb="tab"] {
-    font-size: 13px; font-weight: 500; color: #6B6B6B;
-    padding: 0.5rem 1rem; border-bottom: 2px solid transparent;
-    background: transparent;
+  font-size: 13px; font-weight: 500; color: var(--ink-mid);
+  padding: 0.5rem 1rem; border-bottom: 2px solid transparent;
+  background: transparent;
 }
 .stTabs [aria-selected="true"] {
-    color: #1a1a1a !important; border-bottom: 2px solid #1a1a1a !important;
+  color: var(--ink) !important; border-bottom: 2px solid var(--ink) !important;
 }
+.stAlert { border-radius: 8px !important; font-size: 13px !important; }
 
-/* Divider */
-hr { border: none; border-top: 1px solid #E8E6E1; margin: 2rem 0; }
-
-/* Tables */
-[data-testid="stDataFrame"] { border: 1px solid #E8E6E1; border-radius: 10px; overflow: hidden; }
-
-/* Info / warning boxes */
-.stAlert { border-radius: 8px !important; border: 1px solid #E8E6E1 !important;
-           font-size: 13px !important; }
-
-/* Number input */
-[data-testid="stNumberInput"] input {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 14px !important;
+/* ── st.page_link nav styling ── */
+[data-testid="stPageLink"] { display:inline-flex!important; }
+[data-testid="stPageLink"] a {
+  font-size:13px!important; font-weight:500!important;
+  color:var(--ink-mid)!important; padding:6px 14px!important;
+  border-radius:6px!important; text-decoration:none!important;
+  transition:all 0.15s!important; background:transparent!important;
+  white-space:nowrap!important;
 }
-
-/* Plotly charts */
-.js-plotly-plot { border-radius: 8px; }
-
-/* Caption */
-.stCaption { font-size: 11px !important; color: #9B9B9B !important; }
-
-/* Sidebar nav items */
-[data-testid="stSidebarNav"] a {
-    font-size: 13px !important; color: #3D3D3D !important;
-    font-weight: 400 !important; padding: 0.4rem 0.75rem !important;
-    border-radius: 6px !important;
-}
-[data-testid="stSidebarNav"] a:hover { background: #F0EEE9 !important; }
-[data-testid="stSidebarNav"] [aria-current="page"] {
-    background: #ECEAE4 !important; font-weight: 500 !important; color: #1a1a1a !important;
-}
+[data-testid="stPageLink"] a:hover { background:var(--bg)!important; color:var(--ink)!important; }
+[data-testid="stPageLink-active"] a { background:var(--ink)!important; color:white!important; }
+[data-testid="stSidebarNav"] { display:none!important; }
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(SHARED_CSS, unsafe_allow_html=True)
 
-# Sidebar branding
-st.sidebar.markdown("""
-<div class="sidebar-brand">
-  <div class="sidebar-brand-icon">ML</div>
-  <div>
-    <div class="sidebar-brand-text">MarketLytics</div>
-    <div class="sidebar-sub">MMM Platform</div>
+# ── Top nav ───────────────────────────────────────────────────────────────────
+with st.container():
+    st.page_link("pages/1_overview.py", label="Start with Channel Overview →")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ── Load data for live KPIs ───────────────────────────────────────────────────
+@st.cache_data
+def load_data():
+    if DATA_PATH.exists():
+        return pd.read_csv(DATA_PATH, parse_dates=["DATE"])
+    return None
+
+@st.cache_resource
+def load_artifacts():
+    if MODEL_PATH.exists():
+        return joblib.load(MODEL_PATH)
+    return None
+
+df        = load_data()
+artifacts = load_artifacts()
+CHANNELS  = ["tv_S", "ooh_S", "print_S", "facebook_S", "search_S", "newsletter"]
+
+# ── Page body ─────────────────────────────────────────────────────────────────
+st.markdown('<div class="page-wrap">', unsafe_allow_html=True)
+
+# Hero
+st.markdown("""
+<div class="hero">
+  <div class="hero-badge">◈ Internship Project &nbsp;·&nbsp; Marketing Mix Modelling</div>
+  <div class="hero-title">Understand what your<br>marketing is really doing.</div>
+  <div class="hero-desc">
+    MarketLytics uses a Ridge Regression Marketing Mix Model with adstock decay and Hill saturation
+    transforms to decompose revenue across 6 media channels — and find the mathematically optimal
+    budget allocation.
   </div>
 </div>
-<div class="nav-label">Analytics</div>
 """, unsafe_allow_html=True)
 
-# Home page content
+# KPI strip
+if df is not None and artifacts is not None:
+    CHANNELS_present = [ch for ch in CHANNELS if ch in df.columns]
+    total_rev   = df["revenue"].sum() if "revenue" in df.columns else 0
+    total_spend = df[CHANNELS_present].apply(pd.to_numeric, errors="coerce").sum().sum()
+    avg_roi     = total_rev / total_spend if total_spend > 0 else 0
+    cv_mape     = artifacts.get("cv_mape", 0)
+    n_weeks     = len(df)
+    kpi_html = f"""
+    <div class="kpi-strip">
+      <div class="kpi-cell">
+        <div class="kpi-label">Total Revenue</div>
+        <div class="kpi-value">${total_rev/1e6:.1f}M</div>
+        <div class="kpi-sub">{n_weeks} weekly observations</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">Total Media Spend</div>
+        <div class="kpi-value">${total_spend/1e6:.1f}M</div>
+        <div class="kpi-sub">Across 6 channels</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">Blended ROI</div>
+        <div class="kpi-value">{avg_roi:.2f}×</div>
+        <div class="kpi-sub">Revenue per $ of spend</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">Model CV MAPE</div>
+        <div class="kpi-value">{cv_mape:.1%}</div>
+        <div class="kpi-sub">5-fold TimeSeriesSplit</div>
+      </div>
+    </div>
+    """
+else:
+    kpi_html = """
+    <div class="kpi-strip">
+      <div class="kpi-cell"><div class="kpi-label">Total Revenue</div><div class="kpi-value">—</div><div class="kpi-sub">Run python -m src.model first</div></div>
+      <div class="kpi-cell"><div class="kpi-label">Media Spend</div><div class="kpi-value">—</div></div>
+      <div class="kpi-cell"><div class="kpi-label">Blended ROI</div><div class="kpi-value">—</div></div>
+      <div class="kpi-cell"><div class="kpi-label">CV MAPE</div><div class="kpi-value">—</div></div>
+    </div>
+    """
+st.markdown(kpi_html, unsafe_allow_html=True)
+
+# How it works
 st.markdown("""
-<div class="page-header">
-  <div class="page-eyebrow">MarketLytics · MMM Platform</div>
-  <div class="page-title">Marketing Mix Model</div>
-  <div class="page-desc">Understand how media spend across channels drives revenue — and find the optimal budget allocation.</div>
+<div class="section-header">
+  <div class="section-title">How it works</div>
+  <div class="section-desc">Three pages, one story — from measurement to optimisation to validation.</div>
+</div>
+<div class="hiw-steps">
+  <div class="hiw-step">
+    <div class="hiw-icon">📈</div>
+    <div class="hiw-num">Step 01 &nbsp;·&nbsp; Backward-looking</div>
+    <div class="hiw-step-title">Understand the past</div>
+    <div class="hiw-step-desc">See which channels drove revenue, compare ROI across all 6 channels, and review spend vs revenue trends over 208 weeks.</div>
+  </div>
+  <div class="hiw-step">
+    <div class="hiw-icon">🎛️</div>
+    <div class="hiw-num">Step 02 &nbsp;·&nbsp; Forward-looking</div>
+    <div class="hiw-step-title">Simulate the future</div>
+    <div class="hiw-step-desc">Drag sliders to reallocate budget and watch predicted revenue update live. Hit "Find Optimal Allocation" to let the model do the maths.</div>
+  </div>
+  <div class="hiw-step">
+    <div class="hiw-icon">🔬</div>
+    <div class="hiw-num">Step 03 &nbsp;·&nbsp; Credibility layer</div>
+    <div class="hiw-step-title">Trust the numbers</div>
+    <div class="hiw-step-desc">Validate fit with actual vs predicted, residual analysis, coefficient breakdown, saturation curves, and cross-validated error metrics.</div>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown("""
-    <div class="panel">
-      <div style="font-size:20px;margin-bottom:0.75rem;">📈</div>
-      <div class="section-title">Channel Overview</div>
-      <div style="font-size:13px;color:#6B6B6B;line-height:1.6;">
-        ROI by channel, revenue contribution breakdown, and spend vs revenue trends over time.
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col2:
-    st.markdown("""
-    <div class="panel">
-      <div style="font-size:20px;margin-bottom:0.75rem;">🎛️</div>
-      <div class="section-title">Budget Playground</div>
-      <div style="font-size:13px;color:#6B6B6B;line-height:1.6;">
-        Reallocate spend across channels and see predicted revenue change in real time.
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col3:
-    st.markdown("""
-    <div class="panel">
-      <div style="font-size:20px;margin-bottom:0.75rem;">🔬</div>
-      <div class="section-title">Model Diagnostics</div>
-      <div style="font-size:13px;color:#6B6B6B;line-height:1.6;">
-        Validate model performance with actual vs predicted, residual analysis, and CV metrics.
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown("<hr>", unsafe_allow_html=True)
+# Feature cards
 st.markdown("""
-<div style="font-size:12px;color:#9B9B9B;">
-Dataset · Robyn Open-Source MMM · 208 weekly observations · 6 media channels
-&nbsp;·&nbsp; Model · Ridge Regression with adstock + Hill saturation transforms
-&nbsp;·&nbsp; Validation · 5-fold TimeSeriesSplit CV
+<div class="section-header">
+  <div class="section-title">Explore the platform</div>
+</div>
+<div class="feature-grid">
+  <div class="feature-card">
+    <div class="feature-icon">📈</div>
+    <div class="feature-dir">Backward-looking</div>
+    <div class="feature-title">Channel Overview</div>
+    <div class="feature-desc">ROI by channel, revenue contribution donut chart, and stacked spend breakdown — with a date-range filter.</div>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🎛️</div>
+    <div class="feature-dir">Forward-looking</div>
+    <div class="feature-title">Budget Playground</div>
+    <div class="feature-desc">Set a total budget, distribute across channels, and see predicted revenue delta vs historical baseline in real time.</div>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🔬</div>
+    <div class="feature-dir">Credibility layer</div>
+    <div class="feature-title">Model Diagnostics</div>
+    <div class="feature-desc">Actual vs predicted, residuals, coefficient waterfall, saturation curves, and CV score cards — all in one view.</div>
+  </div>
 </div>
 """, unsafe_allow_html=True)
+
+# Tech footnote + next CTA
+st.markdown("""
+<div class="tech-strip">
+  Dataset · Robyn Open-Source MMM · 208 weekly observations · 6 media channels &nbsp;·&nbsp;
+  Model · Ridge Regression + adstock + Hill saturation &nbsp;·&nbsp;
+  Validation · 5-fold TimeSeriesSplit CV
+</div>
+<div class="next-footer">
+  <a class="next-link" href="/1_overview">Start with Channel Overview →</a>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
