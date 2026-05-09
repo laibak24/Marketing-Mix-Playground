@@ -10,7 +10,7 @@ Shows ROI per media channel and lets users drag sliders to reallocate budget and
 
 ```bash
 # 1. Clone and install
-git clone <your-repo-url>
+git clone https://github.com/laibak24/Marketing-Mix-Playground
 cd mmm-dashboard
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
@@ -24,11 +24,6 @@ python -m src.model
 
 # 4. Run the dashboard
 streamlit run app/main.py
-```
-
-## Run tests
-```bash
-pytest tests/ -v
 ```
 
 ## Project structure
@@ -49,7 +44,6 @@ mmm-dashboard/
 │       ├── 2_playground.py ← Budget sliders + live prediction
 │       └── 3_diagnostics.py ← Model fit, residuals
 ├── models/                 ← Saved .joblib (not committed)
-├── tests/                  ← Pytest unit tests
 └── requirements.txt
 ```
 
