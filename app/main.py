@@ -2,6 +2,8 @@
 main.py — MarketLytics MMM Dashboard entry point.
 Run: streamlit run app/main.py
 """
+
+
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parents[1]))
@@ -17,28 +19,67 @@ st.set_page_config(
     page_title="MarketLytics · MMM",
     page_icon="◈",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="collapsed"
 )
+
+st.markdown("""
+<style>
+:root {
+  color-scheme: light !important;
+}
+html, body, .stApp {
+  background-color: #F7F6F2 !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ── Shared design system (imported on every page) ─────────────────────────────
 SHARED_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap');
 
+/* FORCE LIGHT MODE OVERRIDES */
+.stApp {
+  background: var(--bg) !important;
+}
+
+[data-testid="stAppViewContainer"] {
+  background: var(--bg) !important;
+}
+
+[data-testid="stMain"] {
+  background: var(--bg) !important;
+}
+
+section.main {
+  background: var(--bg) !important;
+}
+
+.block-container {
+  background: transparent !important;
+}
+
+/* Fix markdown text rendering */
+.stMarkdown, .stMarkdown p, .stMarkdown div {
+  color: var(--ink) !important;
+}
 :root {
   --bg:            #F7F6F2;
   --surface:       #FFFFFF;
-  --border:        #E2E0D9;
-  --border-strong: #C8C5BC;
-  --ink:           #141414;
-  --ink-mid:       #4A4A4A;
-  --ink-muted:     #8C8C8C;
+  --border:        #D6D3CC;
+  --border-strong: #BFBBAF;
+
+  --ink:           #111111;
+  --ink-mid:       #2F2F2F;     /* darker */
+  --ink-muted:     #6B6B6B;     /* more readable */
+
   --green:         #15803D;
-  --green-bg:      #F0FDF4;
-  --green-border:  #BBF7D0;
   --red:           #DC2626;
-  --red-bg:        #FEF2F2;
   --amber:         #B45309;
+
+  --radius:        10px;
+  --green-border:  #BBF7D0;
+  --red-bg:        #FEF2F2;
   --amber-bg:      #FFFBEB;
   --radius:        10px;
   --font-sans:     'DM Sans', sans-serif;
@@ -93,7 +134,13 @@ section[data-testid="stMain"] > div { padding: 0 !important; }
 .page-wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 3rem 5rem; }
 
 /* ── Hero ── */
-.hero { padding: 3.5rem 0 3rem; border-bottom: 1px solid var(--border); margin-bottom: 2.5rem; }
+.hero {
+  padding: 3.5rem 0 3rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2.5rem;
+
+  background: var(--bg);   /* ADD THIS */
+}
 .hero-badge {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--bg); border: 1px solid var(--border);
@@ -102,9 +149,12 @@ section[data-testid="stMain"] > div { padding: 0 !important; }
   margin-bottom: 18px;
 }
 .hero-title {
-  font-family: var(--font-display); font-size: 50px; font-weight: 800;
-  color: var(--ink); letter-spacing: -1.5px; line-height: 1.05;
-  margin: 0 0 16px 0;
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 800;
+  color: #0A0A0A;   /* stronger than var(--ink) */
+  letter-spacing: -1.5px;
+  line-height: 1.05;
 }
 .hero-desc {
   font-size: 15px; color: var(--ink-mid); line-height: 1.7;
@@ -254,17 +304,27 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 .stAlert { border-radius: 8px !important; font-size: 13px !important; }
 
 /* ── st.page_link nav styling ── */
-[data-testid="stPageLink"] { display:inline-flex!important; }
-[data-testid="stPageLink"] a {
-  font-size:13px!important; font-weight:500!important;
-  color:var(--ink-mid)!important; padding:6px 14px!important;
-  border-radius:6px!important; text-decoration:none!important;
-  transition:all 0.15s!important; background:transparent!important;
-  white-space:nowrap!important;
+[data-testid="stPageLink"] {
+  margin-top: 20px;
 }
-[data-testid="stPageLink"] a:hover { background:var(--bg)!important; color:var(--ink)!important; }
+
+[data-testid="stPageLink"] a {
+  background: var(--ink) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  padding: 10px 18px !important;
+  font-weight: 600 !important;
+  display: inline-block;
+}
 [data-testid="stPageLink-active"] a { background:var(--ink)!important; color:white!important; }
 [data-testid="stSidebarNav"] { display:none!important; }
+[data-testid="stPageLink"] a {
+  background: var(--ink) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-weight: 600 !important;
+}
 </style>
 """
 st.markdown(SHARED_CSS, unsafe_allow_html=True)
@@ -412,9 +472,6 @@ st.markdown("""
   Dataset · Robyn Open-Source MMM · 208 weekly observations · 6 media channels &nbsp;·&nbsp;
   Model · Ridge Regression + adstock + Hill saturation &nbsp;·&nbsp;
   Validation · 5-fold TimeSeriesSplit CV
-</div>
-<div class="next-footer">
-  <a class="next-link" href="/1_overview">Start with Channel Overview →</a>
 </div>
 """, unsafe_allow_html=True)
 

@@ -20,10 +20,11 @@ DATA_PATH  = Path("data/raw/weekly_media_data.csv")
 st.set_page_config(page_title="Overview · MarketLytics", page_icon="📈", layout="wide",
                    initial_sidebar_state="collapsed")
 
-# ── Design system (identical across all pages) ────────────────────────────────
+# ── Design system ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap');
+
 :root {
   --bg:#F7F6F2; --surface:#FFFFFF; --border:#E2E0D9; --border-strong:#C8C5BC;
   --ink:#141414; --ink-mid:#4A4A4A; --ink-muted:#8C8C8C;
@@ -31,64 +32,152 @@ st.markdown("""
   --red:#DC2626; --red-bg:#FEF2F2; --amber:#B45309; --amber-bg:#FFFBEB;
   --radius:10px; --font-sans:'DM Sans',sans-serif;
   --font-display:'Syne',sans-serif; --font-mono:'DM Mono',monospace;
+  color-scheme: light !important;
 }
-html,body,[class*="css"]{font-family:var(--font-sans);background:var(--bg)!important;color:var(--ink);}
-#MainMenu,footer,header{visibility:hidden;}
-[data-testid="collapsedControl"]{display:none!important;}
-[data-testid="stSidebar"]{display:none!important;}
-.block-container{padding:0!important;max-width:100%!important;}
-section[data-testid="stMain"]>div{padding:0!important;}
-.topnav{position:sticky;top:0;z-index:1000;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 3rem;height:56px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
-.topnav-brand{display:flex;align-items:center;gap:10px;}
-.topnav-logo{width:30px;height:30px;background:var(--ink);border-radius:7px;display:flex;align-items:center;justify-content:center;color:white;font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:-0.3px;}
-.topnav-name{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-0.3px;}
-.topnav-links{display:flex;align-items:center;gap:4px;}
-.topnav-link{font-size:13px;font-weight:500;color:var(--ink-mid);padding:6px 14px;border-radius:6px;text-decoration:none;transition:all 0.15s;display:inline-block;}
-.topnav-link:hover{background:var(--bg);color:var(--ink);}
-.topnav-link.active{background:var(--ink);color:white!important;}
-.page-wrap{max-width:1100px;margin:0 auto;padding:2.5rem 3rem 5rem;}
-.page-header{border-bottom:1px solid var(--border);padding-bottom:1.5rem;margin-bottom:2rem;}
-.page-eyebrow{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;}
-.page-title{font-family:var(--font-display);font-size:36px;font-weight:800;color:var(--ink);letter-spacing:-0.8px;margin:0 0 8px 0;}
-.page-desc{font-size:14px;color:var(--ink-mid);margin-top:4px;line-height:1.6;max-width:600px;}
-.section-title{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-0.2px;margin:0 0 0.3rem 0;}
-.section-desc{font-size:12px;color:var(--ink-muted);margin-bottom:1rem;}
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;}
-[data-testid="stMetric"]{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;}
-[data-testid="stMetricLabel"]{font-size:10px!important;color:var(--ink-muted)!important;font-weight:600!important;text-transform:uppercase;letter-spacing:0.05em!important;}
-[data-testid="stMetricValue"]{font-family:var(--font-display)!important;font-size:22px!important;font-weight:700!important;color:var(--ink)!important;letter-spacing:-0.4px!important;}
-[data-testid="stMetricDelta"]{font-size:12px!important;}
-.stButton>button{background:var(--ink)!important;color:white!important;border:none!important;border-radius:8px!important;font-family:var(--font-sans)!important;font-size:13px!important;font-weight:500!important;padding:0.5rem 1.25rem!important;}
-.stButton>button:hover{opacity:0.8!important;}
-hr{border:none;border-top:1px solid var(--border);margin:2rem 0;}
-[data-testid="stDataFrame"]{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-.stTabs [data-baseweb="tab-list"]{gap:0;border-bottom:1px solid var(--border);background:transparent;}
-.stTabs [data-baseweb="tab"]{font-size:13px;font-weight:500;color:var(--ink-mid);padding:0.5rem 1rem;border-bottom:2px solid transparent;background:transparent;}
-.stTabs [aria-selected="true"]{color:var(--ink)!important;border-bottom:2px solid var(--ink)!important;}
-.stCaption{font-size:11px!important;color:var(--ink-muted)!important;}
-.insight-pill{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--ink-mid);margin:0.25rem 0.25rem 0.25rem 0;font-weight:500;}
-.insight-pill.green{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
-.insight-pill.amber{background:var(--amber-bg);border-color:#FDE68A;color:var(--amber);}
-.next-footer{border-top:1px solid var(--border);margin-top:3rem;padding-top:1.5rem;display:flex;align-items:center;justify-content:space-between;}
-.prev-link,.next-link{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;text-decoration:none;transition:opacity 0.15s;}
-.prev-link{background:var(--bg);border:1px solid var(--border);color:var(--ink)!important;}
-.next-link{background:var(--ink);color:white!important;}
-.prev-link:hover,.next-link:hover{opacity:0.8;}
+
+html, body, [class*="css"], .stApp, [data-testid="stAppViewContainer"],
+[data-testid="stMain"], section.main {
+  font-family: var(--font-sans);
+  background: var(--bg) !important;
+  color: var(--ink);
+}
+
+.block-container { background: transparent !important; }
+.stMarkdown, .stMarkdown p, .stMarkdown div { color: var(--ink) !important; }
+
+#MainMenu, footer, header { visibility: hidden; }
+[data-testid="collapsedControl"] { display: none !important; }
+[data-testid="stSidebar"] { display: none !important; }
+
+/* Remove ALL padding/margin from block container so navbar sits flush at top */
+.block-container {
+  padding: 0 !important;
+  max-width: 100% !important;
+  margin-top: 0 !important;
+}
+section[data-testid="stMain"] > div {
+  padding: 0 !important;
+}
+/* Hide the st.columns nav row entirely — we use pure HTML nav instead */
+[data-testid="stMain"] > div > div:first-child .stColumns,
+[data-testid="stMain"] .stPageLink,
+[data-testid="stHorizontalBlock"]:has(.stPageLink) {
+  display: none !important;
+}
+
+/* ── Navbar ── */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E0D9;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  width: 100%;
+}
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3rem;
+  height: 56px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.navbar-logo {
+  width: 30px; height: 30px;
+  background: #141414;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  font-family: var(--font-display);
+  font-size: 12px; font-weight: 700; letter-spacing: -0.3px;
+}
+.navbar-name {
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 700;
+  color: #141414; letter-spacing: -0.3px;
+}
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.nav-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4A4A4A;
+  padding: 6px 14px;
+  border-radius: 6px;
+  text-decoration: none !important;
+  transition: background 0.15s, color 0.15s;
+  display: inline-block;
+  cursor: pointer;
+}
+.nav-link:hover {
+  background: #F7F6F2;
+  color: #141414;
+  text-decoration: none !important;
+}
+.nav-link.active {
+  background: #141414;
+  color: #FFFFFF !important;
+  text-decoration: none !important;
+}
+
+/* ── Page layout ── */
+.page-wrap { max-width: 1100px; margin: 0 auto; padding: 2.5rem 3rem 5rem; }
+.page-header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+.page-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 8px; }
+.page-title { font-family: var(--font-display); font-size: 36px; font-weight: 800; color: var(--ink); letter-spacing: -0.8px; margin: 0 0 8px 0; }
+.page-desc { font-size: 14px; color: var(--ink-mid); margin-top: 4px; line-height: 1.6; max-width: 600px; }
+.section-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: -0.2px; margin: 0 0 0.3rem 0; }
+.section-desc { font-size: 12px; color: var(--ink-muted); margin-bottom: 1rem; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+
+/* ── Components ── */
+[data-testid="stMetric"] { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+[data-testid="stMetricLabel"] { font-size: 10px !important; color: var(--ink-muted) !important; font-weight: 600 !important; text-transform: uppercase; letter-spacing: 0.05em !important; }
+[data-testid="stMetricValue"] { font-family: var(--font-display) !important; font-size: 22px !important; font-weight: 700 !important; color: var(--ink) !important; letter-spacing: -0.4px !important; }
+[data-testid="stMetricDelta"] { font-size: 12px !important; }
+.stButton > button { background: var(--ink) !important; color: white !important; border: none !important; border-radius: 8px !important; font-family: var(--font-sans) !important; font-size: 13px !important; font-weight: 500 !important; padding: 0.5rem 1.25rem !important; }
+.stButton > button:hover { opacity: 0.8 !important; }
+hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+.stTabs { background: transparent !important; }
+[data-testid="stExpander"] { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; }
+[data-testid="stExpander"] summary { color: var(--ink) !important; font-weight: 600 !important; }
+[data-testid="stExpander"] summary span { color: var(--ink) !important; }
+[data-testid="stExpander"] svg { fill: var(--ink) !important; }
+[data-testid="stDataFrame"] { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.stTabs [data-baseweb="tab-list"] { gap: 0; border-bottom: 1px solid var(--border); background: transparent; }
+.stTabs [data-baseweb="tab"] { font-size: 13px; font-weight: 500; color: var(--ink-mid); padding: 0.5rem 1rem; border-bottom: 2px solid transparent; background: transparent; }
+.stTabs [aria-selected="true"] { color: var(--ink) !important; border-bottom: 2px solid var(--ink) !important; }
+.stCaption { font-size: 11px !important; color: var(--ink-muted) !important; }
+.insight-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--ink-mid); margin: 0.25rem 0.25rem 0.25rem 0; font-weight: 500; }
+.insight-pill.green { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+.insight-pill.amber { background: var(--amber-bg); border-color: #FDE68A; color: var(--amber); }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Top nav ───────────────────────────────────────────────────────────────────
+# ── Navbar (pure HTML — no st.page_link, no st.columns) ────────────────────
 st.markdown("""
-<div class="topnav">
-  <div class="topnav-brand">
-    <div class="topnav-logo">ML</div>
-    <div class="topnav-name">MarketLytics</div>
-  </div>
-  <div class="topnav-links">
-    <a class="topnav-link" href="/">Home</a>
-    <a class="topnav-link active" href="/1_overview">Overview</a>
-    <a class="topnav-link" href="/2_playground">Playground</a>
-    <a class="topnav-link" href="/3_diagnostics">Diagnostics</a>
+<div class="navbar">
+  <div class="navbar-inner">
+    <div class="navbar-brand">
+      <div class="navbar-logo">ML</div>
+      <div class="navbar-name">MarketLytics</div>
+    </div>
+    <div class="navbar-links">
+      <a class="nav-link" href="/main">Home</a>
+      <a class="nav-link active" href="/overview">Overview</a>
+      <a class="nav-link" href="/playground">Playground</a>
+      <a class="nav-link" href="/diagnostics">Diagnostics</a>
+    </div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -115,7 +204,6 @@ CHANNELS = ["tv_S", "ooh_S", "print_S", "facebook_S", "search_S", "newsletter"]
 CH_LABELS = {"tv_S": "TV", "ooh_S": "Out-of-Home", "print_S": "Print",
              "facebook_S": "Facebook", "search_S": "Search", "newsletter": "Newsletter"}
 
-# ── Chart colours ─────────────────────────────────────────────────────────────
 PALETTE = ["#141414", "#3D3D3D", "#6B6B6B", "#9B9B9B", "#C4C2BC", "#E8E6E1"]
 
 # ── Page body ─────────────────────────────────────────────────────────────────
@@ -152,67 +240,7 @@ c4.metric("Top Channel",       best_ch_label)
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# ── ROI + Contribution ────────────────────────────────────────────────────────
-col1, col2 = st.columns([3, 2], gap="large")
-
-with col1:
-    st.markdown('<div class="section-title">Return on Investment by Channel</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-desc">Revenue generated per dollar of media spend</div>', unsafe_allow_html=True)
-
-    roi_plot = roi_df.copy()
-    roi_plot["label"] = roi_plot["channel"].map(CH_LABELS).fillna(roi_plot["channel"])
-    roi_plot = roi_plot.sort_values("roi", ascending=True)
-
-    colors = [PALETTE[0] if i == len(roi_plot) - 1 else "#E2E0D9" for i in range(len(roi_plot))]
-    fig_roi = go.Figure()
-    fig_roi.add_trace(go.Bar(
-        x=roi_plot["roi"], y=roi_plot["label"], orientation="h",
-        marker_color=colors,
-        text=[f"{v:.2f}×" for v in roi_plot["roi"]],
-        textposition="outside",
-        textfont=dict(size=12, color="#141414", family="DM Sans"),
-        hovertemplate="<b>%{y}</b><br>ROI: %{x:.2f}×<extra></extra>",
-    ))
-    fig_roi.update_layout(
-        height=280, margin=dict(l=0, r=60, t=10, b=10),
-        plot_bgcolor="white", paper_bgcolor="white",
-        xaxis=dict(showgrid=True, gridcolor="#F0EEE9", zeroline=False,
-                   tickfont=dict(size=11, color="#8C8C8C"), showticklabels=False),
-        yaxis=dict(showgrid=False, tickfont=dict(size=12, color="#4A4A4A")),
-        bargap=0.35,
-    )
-    st.plotly_chart(fig_roi, use_container_width=True, config={"displayModeBar": False})
-
-with col2:
-    st.markdown('<div class="section-title">Revenue Contribution</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-desc">Share of attributed revenue per channel</div>', unsafe_allow_html=True)
-
-    contribs_plot = contribs.copy()
-    contribs_plot["label"] = contribs_plot["channel"].map(CH_LABELS).fillna(contribs_plot["channel"])
-    top_ch = contribs_plot.loc[contribs_plot["contribution_pct"].idxmax(), "label"]
-
-    fig_pie = go.Figure(go.Pie(
-        labels=contribs_plot["label"],
-        values=contribs_plot["contribution_pct"],
-        hole=0.6,
-        marker=dict(colors=PALETTE, line=dict(color="white", width=2)),
-        textinfo="none",
-        hovertemplate="<b>%{label}</b><br>%{value:.1f}%<extra></extra>",
-    ))
-    fig_pie.update_layout(
-        height=280, margin=dict(l=0, r=0, t=10, b=10),
-        paper_bgcolor="white",
-        legend=dict(orientation="v", font=dict(size=11, color="#4A4A4A"),
-                    itemsizing="constant", x=0.72, y=0.5),
-        annotations=[dict(
-            text=f"<b>{top_ch}</b><br><span style='color:#8C8C8C'>leads</span>",
-            x=0.35, y=0.5, font_size=11, showarrow=False, font_color="#141414"
-        )]
-    )
-    st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
-
 # ── Time series ───────────────────────────────────────────────────────────────
-st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown('<div class="section-title">Revenue & Spend Over Time</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-desc">Weekly revenue trend alongside total media investment</div>', unsafe_allow_html=True)
 
@@ -298,12 +326,5 @@ st.markdown(f"""
 <span class="insight-pill">◈ Blended ROI of {avg_roi:.2f}× across ${total_spend/1e6:.1f}M total spend</span>
 """, unsafe_allow_html=True)
 
-# ── Page nav ──────────────────────────────────────────────────────────────────
-_pn_l, _pn_r = st.columns([1,1])
-with _pn_l:
-    st.page_link("main.py", label="← Home")
-with _pn_r:
-    st.page_link("pages/2_playground.py", label="Budget Playground →")
- 
+
 st.markdown('</div>', unsafe_allow_html=True)
- 

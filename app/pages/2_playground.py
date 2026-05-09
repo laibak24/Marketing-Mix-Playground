@@ -25,6 +25,7 @@ st.set_page_config(page_title="Playground · MarketLytics", page_icon="🎛️",
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap');
+
 :root {
   --bg:#F7F6F2; --surface:#FFFFFF; --border:#E2E0D9; --border-strong:#C8C5BC;
   --ink:#141414; --ink-mid:#4A4A4A; --ink-muted:#8C8C8C;
@@ -32,73 +33,254 @@ st.markdown("""
   --red:#DC2626; --red-bg:#FEF2F2; --amber:#B45309; --amber-bg:#FFFBEB;
   --radius:10px; --font-sans:'DM Sans',sans-serif;
   --font-display:'Syne',sans-serif; --font-mono:'DM Mono',monospace;
+  color-scheme: light !important;
 }
-html,body,[class*="css"]{font-family:var(--font-sans);background:var(--bg)!important;color:var(--ink);}
-#MainMenu,footer,header{visibility:hidden;}
-[data-testid="collapsedControl"]{display:none!important;}
-[data-testid="stSidebar"]{display:none!important;}
-.block-container{padding:0!important;max-width:100%!important;}
-section[data-testid="stMain"]>div{padding:0!important;}
-.topnav{position:sticky;top:0;z-index:1000;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 3rem;height:56px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
-.topnav-brand{display:flex;align-items:center;gap:10px;}
-.topnav-logo{width:30px;height:30px;background:var(--ink);border-radius:7px;display:flex;align-items:center;justify-content:center;color:white;font-family:var(--font-display);font-size:12px;font-weight:700;}
-.topnav-name{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-0.3px;}
-.topnav-links{display:flex;align-items:center;gap:4px;}
-.topnav-link{font-size:13px;font-weight:500;color:var(--ink-mid);padding:6px 14px;border-radius:6px;text-decoration:none;transition:all 0.15s;display:inline-block;}
-.topnav-link:hover{background:var(--bg);color:var(--ink);}
-.topnav-link.active{background:var(--ink);color:white!important;}
-.page-wrap{max-width:1100px;margin:0 auto;padding:2.5rem 3rem 5rem;}
-.page-header{border-bottom:1px solid var(--border);padding-bottom:1.5rem;margin-bottom:2rem;}
-.page-eyebrow{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;}
-.page-title{font-family:var(--font-display);font-size:36px;font-weight:800;color:var(--ink);letter-spacing:-0.8px;margin:0 0 8px 0;}
-.page-desc{font-size:14px;color:var(--ink-mid);margin-top:4px;line-height:1.6;max-width:600px;}
-.section-title{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-0.2px;margin:0 0 0.3rem 0;}
-.section-desc{font-size:12px;color:var(--ink-muted);margin-bottom:1rem;}
-[data-testid="stMetric"]{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;}
-[data-testid="stMetricLabel"]{font-size:10px!important;color:var(--ink-muted)!important;font-weight:600!important;text-transform:uppercase;letter-spacing:0.05em!important;}
-[data-testid="stMetricValue"]{font-family:var(--font-display)!important;font-size:22px!important;font-weight:700!important;color:var(--ink)!important;letter-spacing:-0.4px!important;}
-[data-testid="stMetricDelta"]{font-size:12px!important;}
-.stButton>button{background:var(--ink)!important;color:white!important;border:none!important;border-radius:8px!important;font-family:var(--font-sans)!important;font-size:13px!important;font-weight:500!important;padding:0.5rem 1.25rem!important;}
-.stButton>button:hover{opacity:0.8!important;}
-[data-testid="stSlider"]>div>div>div>div{background:var(--ink)!important;}
-[data-testid="stNumberInput"] input{font-family:var(--font-mono)!important;font-size:14px!important;}
-hr{border:none;border-top:1px solid var(--border);margin:2rem 0;}
-.stCaption{font-size:11px!important;color:var(--ink-muted)!important;}
-.stAlert{border-radius:8px!important;font-size:13px!important;}
 
-/* ── Revenue banner — the hero output ── */
+html, body, [class*="css"], .stApp, [data-testid="stAppViewContainer"],
+[data-testid="stMain"], section.main {
+  font-family: var(--font-sans);
+  background: var(--bg) !important;
+  color: var(--ink);
+}
+
+.block-container { background: transparent !important; }
+.stMarkdown, .stMarkdown p, .stMarkdown div { color: var(--ink) !important; }
+
+#MainMenu, footer, header { visibility: hidden; }
+[data-testid="collapsedControl"] { display: none !important; }
+[data-testid="stSidebar"] { display: none !important; }
+
+.block-container {
+  padding: 0 !important;
+  max-width: 100% !important;
+  margin-top: 0 !important;
+}
+section[data-testid="stMain"] > div { padding: 0 !important; }
+
+/* ── Navbar ── */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E0D9;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  width: 100%;
+}
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3rem;
+  height: 56px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.navbar-logo {
+  width: 30px; height: 30px;
+  background: #141414;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  font-family: var(--font-display);
+  font-size: 12px; font-weight: 700; letter-spacing: -0.3px;
+}
+.navbar-name {
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 700;
+  color: #141414; letter-spacing: -0.3px;
+}
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.nav-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4A4A4A;
+  padding: 6px 14px;
+  border-radius: 6px;
+  text-decoration: none !important;
+  transition: background 0.15s, color 0.15s;
+  display: inline-block;
+  cursor: pointer;
+}
+.nav-link:hover { background: #F7F6F2; color: #141414; text-decoration: none !important; }
+.nav-link.active { background: #141414; color: #FFFFFF !important; text-decoration: none !important; }
+
+/* ── Page layout ── */
+.page-wrap { max-width: 1100px; margin: 0 auto; padding: 2.5rem 3rem 5rem; }
+.page-header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+.page-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 8px; }
+.page-title { font-family: var(--font-display); font-size: 36px; font-weight: 800; color: var(--ink); letter-spacing: -0.8px; margin: 0 0 8px 0; }
+.page-desc { font-size: 14px; color: var(--ink-mid); margin-top: 4px; line-height: 1.6; max-width: 600px; }
+.section-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: -0.2px; margin: 0 0 0.3rem 0; }
+.section-desc { font-size: 12px; color: var(--ink-muted); margin-bottom: 1rem; }
+
+/* ── Components ── */
+[data-testid="stMetric"] { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+[data-testid="stMetricLabel"] { font-size: 10px !important; color: var(--ink-muted) !important; font-weight: 600 !important; text-transform: uppercase; letter-spacing: 0.05em !important; }
+[data-testid="stMetricValue"] { font-family: var(--font-display) !important; font-size: 22px !important; font-weight: 700 !important; color: var(--ink) !important; letter-spacing: -0.4px !important; }
+[data-testid="stMetricDelta"] { font-size: 12px !important; }
+.stButton > button { background: var(--ink) !important; color: white !important; border: none !important; border-radius: 8px !important; font-family: var(--font-sans) !important; font-size: 13px !important; font-weight: 500 !important; padding: 0.5rem 1.25rem !important; }
+.stButton > button:hover { opacity: 0.8 !important; }
+[data-testid="stSlider"] > div > div > div > div { background: var(--ink) !important; }
+[data-testid="stNumberInput"] input { font-family: var(--font-mono) !important; font-size: 14px !important; }
+hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+.stCaption { font-size: 11px !important; color: var(--ink-muted) !important; }
+.stAlert { border-radius: 8px !important; font-size: 13px !important; }
+
+/* ── Slider labels & values ── */
+[data-testid="stSlider"] label,
+[data-testid="stSlider"] label p,
+[data-testid="stSlider"] .st-emotion-cache-label,
+div[class*="stSlider"] > label,
+div[class*="stSlider"] > label > div,
+div[class*="stSlider"] > label > div > p {
+  color: var(--ink) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+/* Slider min/max tick labels */
+[data-testid="stSlider"] [data-testid="stTickBar"] span,
+[data-testid="stSlider"] span {
+  color: var(--ink-muted) !important;
+}
+/* Slider current value bubble */
+[data-testid="stSlider"] [data-testid="stThumbValue"],
+[data-testid="stSlider"] output {
+  color: var(--ink) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+/* ── Number input label ── */
+[data-testid="stNumberInput"] label,
+[data-testid="stNumberInput"] label p {
+  color: var(--ink) !important;
+  font-weight: 600 !important;
+}
+
+/* ── Warning / info / error / success alert boxes ── */
+[data-testid="stAlert"] {
+  border-radius: 8px !important;
+  font-size: 13px !important;
+}
+/* Warning (yellow) */
+[data-testid="stAlert"][data-baseweb="notification"] div[class*="body"],
+.stAlert > div,
+[data-testid="stNotification"] p,
+[data-testid="stNotification"] div {
+  color: var(--ink) !important;
+}
+/* Force all alert/notification text dark */
+div[data-baseweb="notification"] *,
+div[role="alert"] *,
+.stAlert * {
+  color: var(--ink) !important;
+}
+/* Warning box specifically */
+.stWarning, .stWarning * { color: var(--amber) !important; }
+.stError,   .stError *   { color: var(--red)   !important; }
+.stSuccess, .stSuccess * { color: var(--green)  !important; }
+.stInfo,    .stInfo *    { color: #1e40af       !important; }
+
+/* ── Section titles rendered via st.markdown ── */
+.section-title { color: var(--ink) !important; }
+.section-desc  { color: var(--ink-muted) !important; }
+.page-title    { color: var(--ink) !important; }
+.page-desc     { color: var(--ink-mid) !important; }
+.page-eyebrow  { color: var(--ink-muted) !important; }
+
+/* ── Expander label ── */
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary span,
+[data-testid="stExpander"] summary p {
+  color: var(--ink) !important;
+  font-weight: 600 !important;
+}
+
+/* ── Revenue banner base ───────────────────────────── */
 .rev-banner {
-  background: var(--ink); color: white;
-  border-radius: var(--radius); padding: 2rem 2.5rem;
-  display: flex; align-items: center; justify-content: space-between;
+  background: #fff7f7;
+  border-radius: var(--radius);
+  padding: 2rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 1.5rem;
-}
-.rev-banner-main {}
-.rev-banner-label {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 6px;
-}
-.rev-banner-value {
-  font-family: var(--font-display); font-size: 44px; font-weight: 800;
-  letter-spacing: -1.5px; line-height: 1; margin-bottom: 8px;
-}
-.rev-banner-delta {
-  font-size: 14px; font-weight: 500;
-}
-.rev-banner-delta.pos { color: #4ADE80; }
-.rev-banner-delta.neg { color: #F87171; }
-.rev-banner-side { text-align: right; }
-.rev-banner-side-label {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 6px;
-}
-.rev-banner-side-value {
-  font-family: var(--font-display); font-size: 32px; font-weight: 700;
-  letter-spacing: -1px; line-height: 1;
-}
-.rev-banner-side-value.pos { color: #4ADE80; }
-.rev-banner-side-value.neg { color: #F87171; }
 
+  color: white !important; /* force base text color */
+}
+
+/* Ensure all children are white by default */
+.rev-banner * {
+  color: white !important;
+}
+
+/* ── Left (main) ───────────────────────────────────── */
+.rev-banner-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  margin-bottom: 6px;
+}
+
+.rev-banner-value {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.rev-banner-delta {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ── Right (side) ─────────────────────────────────── */
+.rev-banner-side {
+  text-align: right;
+}
+
+.rev-banner-side-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  margin-bottom: 6px;
+}
+
+.rev-banner-side-value {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+/* ── Status colors (must override white) ───────────── */
+.rev-banner-delta.pos,
+.rev-banner-side-value.pos {
+  color: #4ADE80 !important;
+}
+
+.rev-banner-delta.neg,
+.rev-banner-side-value.neg {
+  color: #F87171 !important;
+}
 /* ── Optimizer result banner ── */
 .opt-banner {
   background: var(--green-bg); border: 1px solid var(--green-border);
@@ -106,35 +288,37 @@ hr{border:none;border-top:1px solid var(--border);margin:2rem 0;}
 }
 .opt-banner-label {
   font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--green); margin-bottom: 6px;
+  text-transform: uppercase; color: var(--green) !important; margin-bottom: 6px;
 }
 .opt-banner-value {
   font-family: var(--font-display); font-size: 32px; font-weight: 800;
-  color: var(--ink); letter-spacing: -0.8px; margin-bottom: 4px;
+  color: var(--ink) !important; letter-spacing: -0.8px; margin-bottom: 4px;
 }
-.opt-banner-sub { font-size: 13px; color: var(--green); font-weight: 500; }
+.opt-banner-sub { font-size: 13px; color: var(--green) !important; font-weight: 500; }
 
-/* ── Page nav ── */
-.next-footer{border-top:1px solid var(--border);margin-top:3rem;padding-top:1.5rem;display:flex;align-items:center;justify-content:space-between;}
-.prev-link,.next-link{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;text-decoration:none;transition:opacity 0.15s;}
-.prev-link{background:var(--bg);border:1px solid var(--border);color:var(--ink)!important;}
-.next-link{background:var(--ink);color:white!important;}
-.prev-link:hover,.next-link:hover{opacity:0.8;}
+/* ── Scoped dark text: Streamlit native widgets only, not custom HTML ── */
+[data-testid="stMain"] .stMarkdown > div > p,
+[data-testid="stMain"] .stText p {
+  color: var(--ink) !important;
+}
+            
 </style>
 """, unsafe_allow_html=True)
 
-# ── Top nav ───────────────────────────────────────────────────────────────────
+# ── Navbar (pure HTML — no st.page_link) ──────────────────────────────────────
 st.markdown("""
-<div class="topnav">
-  <div class="topnav-brand">
-    <div class="topnav-logo">ML</div>
-    <div class="topnav-name">MarketLytics</div>
-  </div>
-  <div class="topnav-links">
-    <a class="topnav-link" href="/">Home</a>
-    <a class="topnav-link" href="/1_overview">Overview</a>
-    <a class="topnav-link active" href="/2_playground">Playground</a>
-    <a class="topnav-link" href="/3_diagnostics">Diagnostics</a>
+<div class="navbar">
+  <div class="navbar-inner">
+    <div class="navbar-brand">
+      <div class="navbar-logo">ML</div>
+      <div class="navbar-name">MarketLytics</div>
+    </div>
+    <div class="navbar-links">
+      <a class="nav-link" href="/main">Home</a>
+      <a class="nav-link" href="/overview">Overview</a>
+      <a class="nav-link active" href="/playground">Playground</a>
+      <a class="nav-link" href="/diagnostics">Diagnostics</a>
+    </div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -258,7 +442,7 @@ if remaining < 0:
 elif remaining > total_budget * 0.05:
     st.warning(f"${remaining:,} unallocated. Distribute remaining budget for a more accurate prediction.")
 
-# ── Revenue prediction — HERO output ─────────────────────────────────────────
+# ── Revenue prediction ─────────────────────────────────────────────────────────
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown('<div class="section-title">Revenue Prediction</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-desc">Model output based on your current allocation — updates live as you move sliders</div>', unsafe_allow_html=True)
@@ -307,7 +491,7 @@ fig.update_layout(
     yaxis=dict(gridcolor="#F0EEE9", tickformat="$,.0f",
                tickfont=dict(size=11, color="#8C8C8C")),
     xaxis=dict(tickfont=dict(size=12, color="#4A4A4A")),
-    legend=dict(orientation="h", y=1.1, font=dict(size=12)),
+    legend=dict(orientation="h", y=1.1, font=dict(size=12, color="#141414")),
     bargap=0.25, bargroupgap=0.08,
 )
 st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
@@ -352,12 +536,5 @@ if run_opt:
     if not success:
         st.caption("⚠ Optimiser converged with warnings — result is a best estimate.")
 
-# ── Page nav ──────────────────────────────────────────────────────────────────
-_pn_l, _pn_r = st.columns([1,1])
-with _pn_l:
-    st.page_link("pages/1_overview.py", label="← Channel Overview")
-with _pn_r:
-    st.page_link("pages/3_diagnostics.py", label="Model Diagnostics →")
- 
+
 st.markdown('</div>', unsafe_allow_html=True)
- 
